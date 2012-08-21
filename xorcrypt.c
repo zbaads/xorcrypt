@@ -4,6 +4,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "xorcrypt.h"
+
 void die(const char *message)
 {
         if(errno){
@@ -15,7 +17,7 @@ void die(const char *message)
         exit(1);
 }
 
-void readBytesFromFile(int start, int length, char *filename, unsigned char *bytes)
+void readBytesFromFile(int start, int length, const char *filename, unsigned char *bytes)
 {
 	FILE *file;
 
@@ -30,15 +32,7 @@ void readBytesFromFile(int start, int length, char *filename, unsigned char *byt
 	fclose(file);
 }
 
-void xorBytes(unsigned char *unencryptedbytes, unsigned char *randombytes, unsigned char *encryptedbytes, int length)
-{
-	int i;
-	for(i = 0;i <= length;i++){
-		*(encryptedbytes + i) = *(unencryptedbytes + i) ^ *(randombytes + i);
-	}
-}
-
-void appendBytesToFile(int length, char *filename, unsigned char *bytes)
+void appendBytesToFile(int length, const char *filename, unsigned char *bytes)
 {
         FILE *file;
 
@@ -51,7 +45,15 @@ void appendBytesToFile(int length, char *filename, unsigned char *bytes)
         fclose(file);
 }
 
-void clearFile(char *filename)
+void xorBytes(int length, unsigned char *unencryptedbytes, unsigned char *randombytes, unsigned char *encryptedbytes)
+{
+	int i;
+	for(i = 0;i <= length;i++){
+		*(encryptedbytes + i) = *(unencryptedbytes + i) ^ *(randombytes + i);
+	}
+}
+
+void clearFile(const char *filename)
 {
 	FILE *file;
 
@@ -61,7 +63,7 @@ void clearFile(char *filename)
 	fclose(file);
 }
 
-void secureDelete(unsigned char *randombytes, char *random, char *filename, int filelength, int buffer)
+void secureDelete(int buffer, int filelength, unsigned char *randombytes, const char *random, const char *filename)
 {
 	clearFile(filename);
 
@@ -84,10 +86,10 @@ void secureDelete(unsigned char *randombytes, char *random, char *filename, int 
 
 int main(int argc, char *argv[])
 {
-	char *outfile = "out.xor";
+	const char *outfile = "out.xor";
 	int securedelete = 0;
-	char *random = "/dev/random";
-	char *rndfile = "rnd.key";
+	const char *random = "/dev/random";
+	const char *rndfile = "rnd.key";
 	int decrypt = 0;
 	int buffer = 1048576;
 	int outset = 0;
@@ -110,7 +112,7 @@ int main(int argc, char *argv[])
 				random = "/dev/urandom";
 				break;
 			case 'x':
-				if(strcmp(rndfile, "rnd")) die("conflicting arguments");
+				if(strcmp(rndfile, "rnd.key")) die("conflicting arguments");
 				if(!strcmp(random, "/dev/urandom")) die("conflicting arguments");
 				if(securedelete) die("conflicting arguments");
 
@@ -141,7 +143,7 @@ int main(int argc, char *argv[])
 
 	if (!argv[optind]) die("Usage: xorcrypt file");
 
-	char *filename = argv[optind];
+	const char *filename = argv[optind];
 
 	//grabs the length of the unencrypted file
 	file = fopen(filename, "rb");
@@ -175,14 +177,14 @@ int main(int argc, char *argv[])
 		if(decrypt) readBytesFromFile(start, buffer, random, randombytes);
 		else readBytesFromFile(0, buffer, random, randombytes);
 
-		xorBytes(unencryptedbytes, randombytes, encryptedbytes, buffer);
+		xorBytes(buffer, unencryptedbytes, randombytes, encryptedbytes);
 
 		appendBytesToFile(buffer, outfile, encryptedbytes);
 		if(!decrypt) appendBytesToFile(buffer, rndfile, randombytes);
 	}
 	buffer = permbuffer;
 	
-	if(securedelete && !decrypt) secureDelete(randombytes, random, filename, filelength, buffer);
+	if(securedelete && !decrypt) secureDelete(buffer, filelength, randombytes, random, filename);
 
 	free(unencryptedbytes);
 	free(encryptedbytes);
