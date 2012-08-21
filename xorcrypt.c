@@ -87,9 +87,9 @@ int main(int argc, char *argv[])
 	char *outfile = "out.xor";
 	int securedelete = 0;
 	char *random = "/dev/random";
-	char *rndfile = "rnd";
+	char *rndfile = "rnd.key";
 	int decrypt = 0;
-	int buffer = 1024;
+	int buffer = 1048576;
 	int outset = 0;
 	int c;
 
@@ -100,12 +100,20 @@ int main(int argc, char *argv[])
 				outfile = optarg;
 				break;
 			case 's':
+				if(decrypt) die("conflicting arguments");
+
 				securedelete = 1;
 				break;
 			case 'u':
+				if(decrypt) die("conflicting arguments");
+
 				random = "/dev/urandom";
 				break;
 			case 'x':
+				if(strcmp(rndfile, "rnd")) die("conflicting arguments");
+				if(!strcmp(random, "/dev/urandom")) die("conflicting arguments");
+				if(securedelete) die("conflicting arguments");
+
 				decrypt = 1;
 				rndfile = optarg;
 				random = rndfile;
@@ -115,6 +123,8 @@ int main(int argc, char *argv[])
 				buffer = atoi(optarg);
 				break;
 			case 'r':
+				if(decrypt) die("conflicting arguments");
+
 				rndfile = optarg;
 				break;
 			case '?':
