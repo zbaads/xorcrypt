@@ -88,32 +88,38 @@ int main(int argc, char *argv[])
 {
 	const char *outfile = "out.xor";
 	int securedelete = 0;
+	int delete = 0;
 	const char *random = "/dev/random";
+	const char *altrandom = "/dev/random";
 	const char *rndfile = "rnd.key";
 	int decrypt = 0;
 	int buffer = 1048576;
 	int outset = 0;
 	int c;
 
-	while ((c = getopt(argc, argv, "o:sux:b:r:")) != -1){
+	while ((c = getopt(argc, argv, "o:sdux:b:r:")) != -1){
 		switch(c){
 			case 'o':
 				outset = 1;
 				outfile = optarg;
 				break;
 			case 's':
-				if(decrypt) die("conflicting arguments");
+				if(delete) die("conflicting arguments");
 
 				securedelete = 1;
 				break;
+			case 'd':
+				if(securedelete) die("conflicting arguments");
+
+				delete = 1;
+				break;
 			case 'u':
-				if(decrypt) die("conflicting arguments");
 
 				random = "/dev/urandom";
+				altrandom = "/dev/urandom";
 				break;
 			case 'x':
 				if(strcmp(rndfile, "rnd.key")) die("conflicting arguments");
-				if(!strcmp(random, "/dev/urandom")) die("conflicting arguments");
 				if(securedelete) die("conflicting arguments");
 
 				decrypt = 1;
@@ -184,7 +190,23 @@ int main(int argc, char *argv[])
 	}
 	buffer = permbuffer;
 	
-	if(securedelete && !decrypt) secureDelete(buffer, filelength, randombytes, random, filename);
+	if(securedelete){
+		if(decrypt){
+			secureDelete(buffer, filelength, randombytes, altrandom, filename);
+			secureDelete(buffer, filelength, randombytes, altrandom, rndfile);
+		} else {
+			secureDelete(buffer, filelength, randombytes, random, filename);
+		}
+	}
+
+	if(delete){
+		if(decrypt){
+			remove(filename);
+			remove(rndfile);
+		} else {
+			remove(filename);
+		}
+	}
 
 	free(unencryptedbytes);
 	free(encryptedbytes);
