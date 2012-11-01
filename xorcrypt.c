@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "xorcrypt.h"
 
@@ -15,6 +16,16 @@ void die(const char *message)
         }
 
         exit(1);
+}
+
+int isDir(const char *name){
+	struct stat buf;
+	stat(name, &buf);
+	if(S_ISDIR(buf.st_mode)){
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 void readBytesFromFile(int start, int length, const char *filename, unsigned char *bytes)
@@ -96,8 +107,9 @@ int main(int argc, char *argv[])
 	int buffer = 1048576;
 	int outset = 0;
 	int c;
+	int tarred = 0;
 
-	while ((c = getopt(argc, argv, "o:sdux:b:r:")) != -1){
+	while ((c = getopt(argc, argv, "o:sdux:b:r:t")) != -1){
 		switch(c){
 			case 'o':
 				outset = 1;
@@ -135,6 +147,9 @@ int main(int argc, char *argv[])
 
 				rndfile = optarg;
 				break;
+			case 't':
+				tarred = 1;
+				break;
 			case '?':
 				return 1;
 		}
@@ -149,7 +164,24 @@ int main(int argc, char *argv[])
 
 	if (!argv[optind]) die("Usage: xorcrypt file");
 
-	const char *filename = argv[optind];
+	const char *oldfilename = argv[optind];
+
+	const char *filename;
+
+	if (!decrypt && isDir(oldfilename)){
+		tarred = 1;
+		char newfilename[256];
+		sprintf(newfilename, "%s%s", oldfilename, ".tar.gz");
+
+		char command[256];
+		sprintf(command, "tar -czf %s %s", newfilename, oldfilename);
+		system(command);
+
+		filename = newfilename;
+	} else {
+		filename = oldfilename;
+	}
+		
 
 	//grabs the length of the unencrypted file
 	file = fopen(filename, "rb");
@@ -196,6 +228,11 @@ int main(int argc, char *argv[])
 			secureDelete(buffer, filelength, randombytes, altrandom, rndfile);
 		} else {
 			secureDelete(buffer, filelength, randombytes, random, filename);
+			if(tarred){
+				char command[256];
+				sprintf(command, "rm -r %s", oldfilename);
+				system(command);
+			}
 		}
 	}
 
@@ -205,7 +242,20 @@ int main(int argc, char *argv[])
 			remove(rndfile);
 		} else {
 			remove(filename);
+			if(tarred){
+				char command[256];
+				sprintf(command, "rm -r %s", oldfilename);
+				system(command);
+			}
 		}
+	}
+
+	if(decrypt && tarred){
+		char command[256];
+		sprintf(command, "tar -xzf %s", outfile);
+		system(command);
+
+		remove(outfile);
 	}
 
 	free(unencryptedbytes);

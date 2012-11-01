@@ -2,6 +2,7 @@
 #define _db_h
 
 void die(const char *message);
+int isDir(const char *name);
 void readBytesFromFile(int start, int length, const char *filename, unsigned char *bytes);
 void appendBytesToFile(int length, const char *filename, unsigned char *bytes);
 void xorBytes(int length, unsigned char *unencryptedbytes, unsigned char *randombytes, unsigned char *encryptedbytes);
