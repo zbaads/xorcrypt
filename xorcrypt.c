@@ -132,7 +132,6 @@ int main(int argc, char *argv[])
 				break;
 			case 'x':
 				if(strcmp(rndfile, "rnd.key")) die("conflicting arguments");
-				if(securedelete) die("conflicting arguments");
 
 				decrypt = 1;
 				rndfile = optarg;
