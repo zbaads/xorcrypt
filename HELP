@@ -1,0 +1,32 @@
+XORCRYPT
+
+NAME
+	xorcrypt - Program for generating and utilizing a one time pad.
+
+SYNOPSIS
+	xorcrypt [-sdut] [-b buffer] [-o outfile] [-x keyfile (input)] [-r keyfile (output)] [input file]
+
+DESCRIPTION
+	xorcrypt is an ecryption program that encrypts data by XORing it with random bytes from /dev/random (or /dev/urandom if specified). This program will extract data if the -x argument is given, followed by a keyfile. This program relies on tar and gzip for processing directories. Currently there is no support for -- arguments, only single lettered - arguments. Take note that while encrypting, and using data from /dev/random, this program can hang if the system does not have sufficient entropy, and will continue to do so until enough is generated.
+
+OPTIONS
+	-b [buffer]
+		Buffer, how much (in bytes) of a file should be read into ram (for processing) at one time
+	-d
+		Delete, deletes the input file after encryption
+			conflicts with: -s
+	-o [outfile]
+		Outfile, specifies the name of the output file
+	-r [keyfile]
+		specifies the name of the keyfile to create
+			conflicts with: -x
+	-s
+		Secure Delete, deletes and overwrites data with random data
+			conflicts with: -d
+	-t
+		Tarred, used when decrypting a file that was tarred and gzipped on encryption
+	-u
+		Urandom, uses /dev/urandom instead of /dev/random as random number source
+	-x [keyfile]
+		Decrypt, decrypts the input file using the given file as the key
+			conflicts with: -r

@@ -1,0 +1,5 @@
+isTarred automatic detection on encrypted files
+-- argument support
+gzip support for single files
+test and debug duplicate arguments > log findings in man file
+add windows decryption support
