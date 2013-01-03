@@ -104,12 +104,12 @@ int main(int argc, char *argv[])
 	const char *altrandom = "/dev/random";
 	const char *rndfile = "rnd.key";
 	int decrypt = 0;
-	int buffer = 1048576;
+	int buffer = 10485760;
 	int outset = 0;
 	int c;
 	int tarred = 0;
 
-	while ((c = getopt(argc, argv, "o:sdux:b:r:t")) != -1){
+	while ((c = getopt(argc, argv, "b:do:r:stux:")) != -1){
 		switch(c){
 			case 'o':
 				outset = 1;
@@ -170,10 +170,10 @@ int main(int argc, char *argv[])
 	if (!decrypt && isDir(oldfilename)){
 		tarred = 1;
 		char newfilename[256];
-		sprintf(newfilename, "%s%s", oldfilename, ".tar.gz");
+		sprintf(newfilename, "%s%s", oldfilename, ".tar");
 
 		char command[256];
-		sprintf(command, "tar -czf %s %s", newfilename, oldfilename);
+		sprintf(command, "tar -cf %s %s", newfilename, oldfilename);
 		system(command);
 
 		filename = newfilename;
@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
 
 	if(decrypt && tarred){
 		char command[256];
-		sprintf(command, "tar -xzf %s", outfile);
+		sprintf(command, "tar -xf %s", outfile);
 		system(command);
 
 		remove(outfile);
